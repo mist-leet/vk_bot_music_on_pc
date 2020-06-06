@@ -108,6 +108,7 @@ class Seq:
     def log(self):
         self.to_str()
 
+
 class MyLongPoll(VkLongPoll):
     def listen(self):
         while True:
@@ -118,6 +119,22 @@ class MyLongPoll(VkLongPoll):
                 print(e)
 
 
+def send(vk, peer, rand, message, kb):
+    if kb == 0:
+        vk.messages.send(
+            peer_id=peer,
+            random_id=rand,
+            message=message,
+        )
+        return
+    vk.messages.send(
+        peer_id=peer,
+        random_id=rand,
+        message=message,
+        keyboard=kb
+    )
+
+
 session = requests.Session()
 vk_session = vk_api.VkApi(token=key.key)
 
@@ -126,56 +143,35 @@ vk = vk_session.get_api()
 
 kb = Keybooard()
 sq = Seq()
+limks = []
 for event in longpoll.listen():
     if event.type == VkEventType.MESSAGE_NEW and event.to_me:
         if event.text == '▶':
             sq.play()
             kb.next()
-            vk.messages.send(
-                peer_id=event.peer_id,
-                random_id=get_random_id(),
-                message=sq.to_str(),
-                keyboard=kb.getKeybord())
+            send(event.peer_id, get_random_id(), sq.to_str(), kb.getKeybord())
             continue
         if event.text == '⏸':
             sq.pause()
             kb.next()
-            vk.messages.send(
-                peer_id=event.peer_id,
-                random_id=get_random_id(),
-                message=sq.to_str(),
-                keyboard=kb.getKeybord())
+            send(event.peer_id, get_random_id(), sq.to_str(), kb.getKeybord())
             continue
         if event.text == '⏭':
             sq.next()
-            vk.messages.send(
-                peer_id=event.peer_id,
-                random_id=get_random_id(),
-                message=sq.to_str(),
-                keyboard=kb.getKeybord())
+            send(event.peer_id, get_random_id(), sq.to_str(), kb.getKeybord())
             continue
         if event.text.find('youtube') >= 0:
             print('yt req')
-            vk.messages.send(
-                peer_id=event.peer_id,
-                random_id=get_random_id(),
-                message=sq.to_str(),
-                keyboard=kb.getKeybord())
+            send(event.peer_id, get_random_id(), sq.to_str(), kb.getKeybord())
             continue
+        if event.text in ['1','2','3']:
+            pass
         else:
             link = yt.get(event.text)
             if link != 0:
                 sq.push(yt.get(event.text))
-                vk.messages.send(
-                    peer_id=event.peer_id,
-                    random_id=get_random_id(),
-                    message=sq.to_str(),
-                    keyboard=kb.getKeybord())
+                send(event.peer_id, get_random_id(), sq.to_str(), kb.getKeybord())
             else:
-                vk.messages.send(
-                    peer_id=event.peer_id,
-                    random_id=get_random_id(),
-                    message='nothing found',
-                    keyboard=kb.getKeybord())
+                send(event.peer_id, get_random_id(), 'nothing found', kb.getKeybord())
             print(sq.to_str())
             continue
