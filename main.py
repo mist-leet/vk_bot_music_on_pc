@@ -9,12 +9,11 @@ import requests
 import yt
 import vk_api
 import pafy
-import urllib.request
 
 from vk_api.longpoll import VkLongPoll, VkEventType
 from vk_api.keyboard import VkKeyboard
 from collections import deque
-
+from yt import Song
 
 class Keybooard:
     def __init__(self):
@@ -23,16 +22,17 @@ class Keybooard:
 
     def getKeybord(self, state=0):
         kb = VkKeyboard()
+        if state == 2:
+            kb.add_button('1')
+            kb.add_button('2')
+            kb.add_button('3')
+            return kb.get_keyboard()
         if self.state == 0:
             kb.add_button('▶')
             kb.add_button('⏭')
         elif self.state == 1:
             kb.add_button('⏸')
             kb.add_button('⏭')
-        elif self.state == 2:
-            kb.add_button('1')
-            kb.add_button('2')
-            kb.add_button('3')
         print(self.state)
         return kb.get_keyboard()
 
@@ -149,29 +149,37 @@ for event in longpoll.listen():
         if event.text == '▶':
             sq.play()
             kb.next()
-            send(event.peer_id, get_random_id(), sq.to_str(), kb.getKeybord())
+            send(vk, event.peer_id, get_random_id(), sq.to_str(), kb.getKeybord())
             continue
         if event.text == '⏸':
             sq.pause()
             kb.next()
-            send(event.peer_id, get_random_id(), sq.to_str(), kb.getKeybord())
+            send(vk, event.peer_id, get_random_id(), sq.to_str(), kb.getKeybord())
             continue
         if event.text == '⏭':
             sq.next()
-            send(event.peer_id, get_random_id(), sq.to_str(), kb.getKeybord())
+            send(vk, event.peer_id, get_random_id(), sq.to_str(), kb.getKeybord())
             continue
         if event.text.find('youtube') >= 0:
             print('yt req')
-            send(event.peer_id, get_random_id(), sq.to_str(), kb.getKeybord())
+            # TODO name to song
+            # TODO try catch
+            sq.push(Song(event.text, 'todo'))
+            send(vk, event.peer_id, get_random_id(), sq.to_str(), kb.getKeybord())
             continue
-        if event.text in ['1','2','3']:
-            pass
+        if event.text in ['1', '2', '3']:
+            # TODO try catch
+            sq.push(links[int(event.text) - 1])
+            send(vk, event.peer_id, get_random_id(), sq.to_str(), kb.getKeybord())
+            continue
         else:
-            link = yt.get(event.text)
-            if link != 0:
-                sq.push(yt.get(event.text))
-                send(event.peer_id, get_random_id(), sq.to_str(), kb.getKeybord())
+            links = yt.get(event.text)
+            if links:
+                link_list = ''
+                for i in range(len(links)):
+                    link_list += '[' + str(i + 1) + '] ' + links[i].name + '\n'
+                send(vk, event.peer_id, get_random_id(), link_list, kb.getKeybord(state=2))
             else:
-                send(event.peer_id, get_random_id(), 'nothing found', kb.getKeybord())
+                send(vk, event.peer_id, get_random_id(), 'nothing found', kb.getKeybord())
             print(sq.to_str())
             continue

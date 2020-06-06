@@ -6,7 +6,7 @@ from youtube_search import YoutubeSearch
 def get(req):
     songs = get_links(req)
     if songs != 0:
-        return songs[0]
+        return songs
     else:
         return 0
 
@@ -21,5 +21,4 @@ def get_links(req):
     result = json.loads(YoutubeSearch(req,max_results=3).to_json())
     for video in result["videos"]:
         res.append((Song(video["link"], video["title"])))
-        return res
-    return 0
+    return res
